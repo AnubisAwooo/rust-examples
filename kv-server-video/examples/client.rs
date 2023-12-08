@@ -27,6 +27,18 @@ async fn main() -> Result<()> {
     let msg = Request::new_get("hello");
     stream.send(msg.into()).await?;
 
+    let msg = Request::new_put("hello", b"hello world");
+    stream.send(msg.into()).await?;
+
+    let msg = Request::new_get("hello");
+    stream.send(msg.into()).await?;
+
+    let msg = Request::new_delete("hello");
+    stream.send(msg.into()).await?;
+
+    let msg = Request::new_get("hello");
+    stream.send(msg.into()).await?;
+
     while let Some(Result::Ok(buf)) = stream.next().await {
         let msg: Response = Response::try_from(buf)?;
         info!("Response: {:?}", msg);

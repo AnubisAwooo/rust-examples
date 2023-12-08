@@ -2,6 +2,7 @@ use anyhow::{Ok, Result};
 use futures::SinkExt;
 use futures::StreamExt;
 
+use kv::pb::RequestDelete;
 use kv::pb::{request::Command, Request, RequestGet, RequestPut, Response};
 use tokio::net::TcpListener;
 use tokio_util::codec::LengthDelimitedCodec;
@@ -39,6 +40,10 @@ async fn main() -> Result<()> {
                         let old = shared.insert(key.clone(), value);
                         Response::new(key, old.unwrap_or_default().unwrap_or_default().to_vec())
                     }
+                    Some(Command::Delete(RequestDelete { key })) => match shared.remove(&key) {
+                        Result::Ok(Some(v)) => Response::new(key, v.to_vec()),
+                        _ => Response::new(key, vec![]),
+                    },
                     _ => unimplemented!(),
                 };
 

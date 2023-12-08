@@ -6,6 +6,7 @@ message Request {
     oneof command {
         RequestGet get = 1;
         RequestPut put = 2;
+        RequestDelete delete = 3;
     }
 }
 
@@ -22,4 +23,8 @@ message RequestGet {
 message RequestPut {
     string key = 1;
     bytes value = 2;
+}
+
+message RequestDelete {
+    string key = 1;
 }

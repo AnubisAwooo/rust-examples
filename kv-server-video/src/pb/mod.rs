@@ -49,6 +49,11 @@ impl Request {
             })),
         }
     }
+    pub fn new_delete(key: &str) -> Self {
+        Self {
+            command: Some(request::Command::Delete(RequestDelete { key: key.into() })),
+        }
+    }
 }
 
 impl Response {
