@@ -1,9 +1,11 @@
 {
     "cSpell.words": [
+        "clippy",
         "dashmap",
         "oneof",
         "prost",
         "proto",
-        "protos"
+        "protos",
+        "rustfmt"
     ]
 }
