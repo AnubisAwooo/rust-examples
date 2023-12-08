@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
 use anyhow::{Ok, Result};
-use dashmap::DashMap;
 use futures::SinkExt;
 use futures::StreamExt;
 
@@ -10,18 +7,13 @@ use tokio::net::TcpListener;
 use tokio_util::codec::LengthDelimitedCodec;
 use tracing::info;
 
-#[derive(Debug, Default)]
-struct ServerState {
-    state: DashMap<String, Vec<u8>>,
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    let state = Arc::new(ServerState::default());
+    let tree = sled::open("./welcome-to-sled").expect("open");
     let addr = "0.0.0.0:8888";
     let listener = TcpListener::bind(addr).await?;
     info!("Listening to: {}", addr);
@@ -29,7 +21,7 @@ async fn main() -> Result<()> {
     loop {
         let (stream, addr) = listener.accept().await?;
         info!("new client: {:?} accepted", addr);
-        let shared = state.clone();
+        let shared = tree.clone();
         tokio::spawn(async move {
             let mut stream = LengthDelimitedCodec::builder()
                 .length_field_length(2)
@@ -39,13 +31,13 @@ async fn main() -> Result<()> {
                 info!("Got a command: {:?}", msg);
 
                 let response = match msg.command {
-                    Some(Command::Get(RequestGet { key })) => match shared.state.get(&key) {
-                        Some(v) => Response::new(key, v.value().to_vec()),
-                        None => Response::not_found(key),
+                    Some(Command::Get(RequestGet { key })) => match shared.get(&key) {
+                        Result::Ok(Some(v)) => Response::new(key, v.to_vec()),
+                        _ => Response::not_found(key),
                     },
                     Some(Command::Put(RequestPut { key, value })) => {
-                        let old = shared.state.insert(key.clone(), value);
-                        Response::new(key, old.unwrap_or_default())
+                        let old = shared.insert(key.clone(), value);
+                        Response::new(key, old.unwrap_or_default().unwrap_or_default().to_vec())
                     }
                     _ => unimplemented!(),
                 };
