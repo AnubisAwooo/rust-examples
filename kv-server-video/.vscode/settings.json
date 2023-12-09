@@ -2,10 +2,12 @@
     "cSpell.words": [
         "clippy",
         "dashmap",
+        "keypair",
         "oneof",
         "prost",
         "proto",
         "protos",
-        "rustfmt"
+        "rustfmt",
+        "unsplit"
     ]
 }

@@ -5,7 +5,8 @@ use futures::StreamExt;
 use kv::pb::RequestDelete;
 use kv::pb::{request::Command, Request, RequestGet, RequestPut, Response};
 use tokio::net::TcpListener;
-use tokio_util::codec::LengthDelimitedCodec;
+// use tokio_util::codec::LengthDelimitedCodec;
+use kv::noise_codec::{NoiseCodec, NOISE_PARAMS};
 use tracing::info;
 
 #[tokio::main]
@@ -24,9 +25,18 @@ async fn main() -> Result<()> {
         info!("new client: {:?} accepted", addr);
         let shared = tree.clone();
         tokio::spawn(async move {
-            let mut stream = LengthDelimitedCodec::builder()
-                .length_field_length(2)
-                .new_framed(stream);
+            // let mut stream = LengthDelimitedCodec::builder()
+            //     .length_field_length(2)
+            //     .new_framed(stream);
+            let mut stream = NoiseCodec::builder(NOISE_PARAMS, false).new_framed(stream)?;
+            let data = stream.next().await.unwrap()?;
+            info!("<- e");
+            stream.send(data.freeze()).await?;
+            info!("-> e, ee, s, es");
+            let _data = stream.next().await.unwrap()?;
+            info!("<- s, se");
+            stream.codec_mut().into_transport_mode()?;
+
             while let Some(Result::Ok(buf)) = stream.next().await {
                 let msg: Request = buf.try_into()?;
                 info!("Got a command: {:?}", msg);
