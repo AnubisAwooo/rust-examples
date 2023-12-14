@@ -1,5 +1,8 @@
 fn main() {
-    let url = "https://www.rust-lang.org";
+    let url = std::env::args()
+        .skip(1)
+        .next()
+        .unwrap_or("https://www.rust-lang.org".into());
     let output = "rust.md";
 
     println!("Fetching url: {}", url);
