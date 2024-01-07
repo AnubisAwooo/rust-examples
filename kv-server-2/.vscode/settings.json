@@ -1,0 +1,19 @@
+{
+    "cSpell.words": [
+        "dashmap",
+        "Hdel",
+        "Hexist",
+        "Hget",
+        "Hgetall",
+        "Hmdel",
+        "Hmexist",
+        "Hmget",
+        "Hmset",
+        "Hset",
+        "Oneof",
+        "prost",
+        "proto",
+        "protobuf",
+        "protos"
+    ]
+}
