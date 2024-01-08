@@ -19,6 +19,26 @@ impl CommandService for Hgetall {
     }
 }
 
+impl CommandService for Hmget {
+    fn execute(self, store: &impl Storage) -> CommandResponse {
+        let mut list = Vec::with_capacity(self.keys.len());
+        for key in &self.keys {
+            match store.get(&self.table, key) {
+                Ok(Some(v)) => list.push(KvPair {
+                    key: key.clone(),
+                    value: Some(v),
+                }),
+                Ok(None) => list.push(KvPair {
+                    key: key.clone(),
+                    value: None,
+                }),
+                Err(e) => return e.into(),
+            }
+        }
+        list.into()
+    }
+}
+
 impl CommandService for Hset {
     fn execute(self, store: &impl Storage) -> CommandResponse {
         match self.pair {
@@ -29,6 +49,90 @@ impl CommandService for Hset {
             },
             None => Value::default().into(),
         }
+    }
+}
+
+impl CommandService for Hmset {
+    fn execute(self, store: &impl Storage) -> CommandResponse {
+        let mut list = Vec::with_capacity(self.pairs.len());
+        for pair in self.pairs {
+            match store.set(
+                &self.table,
+                pair.key.clone(),
+                pair.value.unwrap_or_default(),
+            ) {
+                Ok(Some(v)) => list.push(KvPair {
+                    key: pair.key,
+                    value: Some(v),
+                }),
+                Ok(None) => list.push(KvPair {
+                    key: pair.key,
+                    value: None,
+                }),
+                Err(e) => return e.into(),
+            }
+        }
+        list.into()
+    }
+}
+
+impl CommandService for Hdel {
+    fn execute(self, store: &impl Storage) -> CommandResponse {
+        match store.del(&self.table, &self.key) {
+            Ok(Some(v)) => v.into(),
+            Ok(None) => Value::default().into(),
+            Err(e) => e.into(),
+        }
+    }
+}
+
+impl CommandService for Hmdel {
+    fn execute(self, store: &impl Storage) -> CommandResponse {
+        let mut list = Vec::with_capacity(self.keys.len());
+        for key in &self.keys {
+            match store.del(&self.table, key) {
+                Ok(Some(v)) => list.push(KvPair {
+                    key: key.clone(),
+                    value: Some(v),
+                }),
+                Ok(None) => list.push(KvPair {
+                    key: key.clone(),
+                    value: Some(Value::default()),
+                }),
+                Err(e) => return e.into(),
+            }
+        }
+        list.into()
+    }
+}
+
+impl CommandService for Hexist {
+    fn execute(self, store: &impl Storage) -> CommandResponse {
+        match store.contains(&self.table, &self.key) {
+            Ok(v) => Value {
+                value: Some(value::Value::Bool(v)),
+            }
+            .into(),
+            Err(e) => e.into(),
+        }
+    }
+}
+
+impl CommandService for Hmexist {
+    fn execute(self, store: &impl Storage) -> CommandResponse {
+        let mut list = Vec::with_capacity(self.keys.len());
+        for key in &self.keys {
+            match store.contains(&self.table, key) {
+                Ok(v) => list.push(KvPair {
+                    key: key.clone(),
+                    value: Some(Value {
+                        value: Some(value::Value::Bool(v)),
+                    }),
+                }),
+                Err(e) => return e.into(),
+            }
+        }
+        list.into()
     }
 }
 
