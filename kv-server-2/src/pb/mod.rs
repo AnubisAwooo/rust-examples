@@ -1,10 +1,123 @@
 use bytes::BytesMut;
+use http::StatusCode;
 use prost::Message;
 
-mod abi;
+pub mod abi;
 
 pub use abi::command_request::*;
 pub use abi::*;
+
+use crate::KvError;
+
+impl CommandRequest {
+    /// 创建 HGET 命令
+    pub fn new_hget(table: impl Into<String>, key: impl Into<String>) -> Self {
+        Self {
+            request_data: Some(RequestData::Hget(Hget {
+                table: table.into(),
+                key: key.into(),
+            })),
+        }
+    }
+
+    /// 创建 HGETALL 命令
+    pub fn new_hgetall(table: impl Into<String>) -> Self {
+        Self {
+            request_data: Some(RequestData::Hgetall(Hgetall {
+                table: table.into(),
+            })),
+        }
+    }
+
+    /// 创建 HSET 命令
+    pub fn new_hset(table: impl Into<String>, key: impl Into<String>, value: Value) -> Self {
+        Self {
+            request_data: Some(RequestData::Hset(Hset {
+                table: table.into(),
+                pair: Some(KvPair::new(key, value)),
+            })),
+        }
+    }
+}
+
+impl KvPair {
+    /// 创建一个新的 kv pair
+    pub fn new(key: impl Into<String>, value: Value) -> Self {
+        Self {
+            key: key.into(),
+            value: Some(value),
+        }
+    }
+}
+
+/// 从 i64转换成 Value
+impl From<i64> for Value {
+    fn from(i: i64) -> Self {
+        Self {
+            value: Some(value::Value::Integer(i)),
+        }
+    }
+}
+
+/// 从 String 转换成 Value
+impl From<String> for Value {
+    fn from(s: String) -> Self {
+        Self {
+            value: Some(value::Value::String(s)),
+        }
+    }
+}
+
+/// 从 &str 转换成 Value
+impl From<&str> for Value {
+    fn from(s: &str) -> Self {
+        Self {
+            value: Some(value::Value::String(s.into())),
+        }
+    }
+}
+
+/// 从 Value 转换成 CommandResponse
+impl From<Value> for CommandResponse {
+    fn from(v: Value) -> Self {
+        Self {
+            status: StatusCode::OK.as_u16() as _,
+            values: vec![v],
+            ..Default::default()
+        }
+    }
+}
+
+/// 从 Vec<KvPair> 转换成 CommandResponse
+impl From<Vec<KvPair>> for CommandResponse {
+    fn from(v: Vec<KvPair>) -> Self {
+        Self {
+            status: StatusCode::OK.as_u16() as _,
+            pairs: v,
+            ..Default::default()
+        }
+    }
+}
+
+/// 从 KvError 转换成 CommandResponse
+impl From<KvError> for CommandResponse {
+    fn from(e: KvError) -> Self {
+        let mut result = Self {
+            status: StatusCode::INTERNAL_SERVER_ERROR.as_u16() as _,
+            message: e.to_string(),
+            values: vec![],
+            pairs: vec![],
+        };
+
+        match e {
+            KvError::NotFound(_, _) => result.status = StatusCode::NOT_FOUND.as_u16() as _,
+            KvError::InvalidCommand(_) => result.status = StatusCode::BAD_REQUEST.as_u16() as _,
+            _ => {}
+        }
+
+        result
+    }
+}
 
 impl TryFrom<BytesMut> for CommandRequest {
     type Error = prost::DecodeError;
@@ -12,68 +125,4 @@ impl TryFrom<BytesMut> for CommandRequest {
     fn try_from(value: BytesMut) -> Result<Self, Self::Error> {
         Message::decode(value)
     }
-}
-
-// impl From<CommandRequest> for BytesMut {
-//     fn from(value: CommandRequest) -> Self {
-//         let mut bytes = BytesMut::new();
-//         value.encode(&mut bytes).unwrap();
-//         bytes
-//     }
-// }
-
-// impl TryFrom<CommandResponse> for BytesMut {
-//     type Error = prost::EncodeError;
-
-//     fn try_from(value: CommandResponse) -> Result<Self, Self::Error> {
-//         let mut bytes = BytesMut::new();
-//         value.encode(&mut bytes)?;
-//         Ok(bytes)
-//     }
-// }
-
-impl From<Value> for CommandResponse {
-    fn from(value: Value) -> Self {
-        CommandResponse {
-            status: 0,
-            message: "success".into(),
-            values: vec![value],
-            pairs: vec![],
-        }
-    }
-}
-
-/// 对 Command 的处理的抽象
-pub trait CommandService {
-    /// 处理 Command，返回 Response
-    fn execute(self, store: &impl Storage) -> CommandResponse;
-}
-
-// 从 Request 中得到 Response，目前处理 HGET/HGETALL/HSET
-// pub fn dispatch(cmd: CommandRequest, store: &impl Storage) -> CommandResponse {
-//     match cmd.request_data {
-//         Some(RequestData::Hget(param)) => param.execute(store),
-//         Some(RequestData::Hgetall(param)) => param.execute(store),
-//         Some(RequestData::Hset(param)) => param.execute(store),
-//         None => KvError::InvalidCommand("Request has no data".into()).into(),
-//         _ => KvError::Internal("Not implemented".into()).into(),
-//     }
-// }
-
-pub type KvError = ();
-
-/// 对存储的抽象，我们不关心数据存在哪儿，但需要定义外界如何和存储打交道
-pub trait Storage {
-    /// 从一个 HashTable 里获取一个 key 的 value
-    fn get(&self, table: &str, key: &str) -> Result<Option<Value>, KvError>;
-    /// 从一个 HashTable 里设置一个 key 的 value，返回旧的 value
-    fn set(&self, table: &str, key: String, value: Value) -> Result<Option<Value>, KvError>;
-    /// 查看 HashTable 中是否有 key
-    fn contains(&self, table: &str, key: &str) -> Result<bool, KvError>;
-    /// 从 HashTable 中删除一个 key
-    fn del(&self, table: &str, key: &str) -> Result<Option<Value>, KvError>;
-    /// 遍历 HashTable，返回所有 kv pair（这个接口不好）
-    fn get_all(&self, table: &str) -> Result<Vec<KvPair>, KvError>;
-    /// 遍历 HashTable，返回 kv pair 的 Iterator
-    fn get_iter(&self, table: &str) -> Result<Box<dyn Iterator<Item = KvPair>>, KvError>;
 }

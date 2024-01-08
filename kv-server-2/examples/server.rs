@@ -3,7 +3,7 @@ use async_prost::AsyncProstStream;
 use bytes::BytesMut;
 use dashmap::DashMap;
 use futures::prelude::*;
-use kv_server_2::pb::{
+use kv_server_2::{
     command_request::RequestData,
     CommandRequest,
     CommandResponse,

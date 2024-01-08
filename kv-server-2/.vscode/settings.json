@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "cmds",
         "dashmap",
         "Hdel",
         "Hexist",
@@ -10,10 +11,12 @@
         "Hmget",
         "Hmset",
         "Hset",
+        "mapref",
         "Oneof",
         "prost",
         "proto",
         "protobuf",
-        "protos"
+        "protos",
+        "thiserror"
     ]
 }

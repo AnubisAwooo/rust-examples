@@ -6,15 +6,19 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1"
-async-prost = "0.4"
-prost = "0.12"
+bytes = "1"     # 高效处理网络 buffer 的库
+prost = "0.12"  # 处理 protobuf 的代码
+tracing = "0.1" # 日志处理
+thiserror = "1" # 错误处理
 dashmap = "5"
-tokio = { version = "1", features = ["full"] }
-tracing = "0.1"
-tracing-subscriber = "0.3"
-futures = "0.3"
-bytes = "1"
+http = "1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] } # 异步网络库
+tracing-subscriber = "0.3"                     # 日志处理
+futures = "0.3"                                # 提供 Stream trait
+anyhow = "1"                                   # 错误处理
+async-prost = "0.4"                            # 支持把 protobuf 封装成 TCP frame
 
 [build-dependencies]
 prost-build = "0.12" # 编译 protobuf

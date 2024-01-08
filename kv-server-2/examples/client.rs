@@ -1,49 +1,37 @@
 use anyhow::Result;
 use async_prost::AsyncProstStream;
 use futures::prelude::*;
-use kv_server_2::pb::{
-    command_request,
-    value,
-    CommandRequest,
-    Hset,
-    // KvError,
-    KvPair,
-    Value,
-};
+use kv_server_2::{CommandRequest, CommandResponse};
 use prost::Message;
 use tokio::net::TcpStream;
+use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
-    let addr = "localhost:9527";
-
+    let addr = "127.0.0.1:9527";
+    // 连接服务器
     let stream = TcpStream::connect(addr).await?;
 
-    let mut stream =
-        AsyncProstStream::<tokio::net::TcpStream, Vec<u8>, Vec<u8>, _>::from(stream).for_async();
+    // 使用 AsyncProstStream 来处理 TCP Frame
+    let mut client = AsyncProstStream::<_, Vec<u8>, Vec<u8>, _>::from(stream).for_async();
 
-    let msg = CommandRequest {
-        request_data: Some(command_request::RequestData::Hset(Hset {
-            table: "table1".to_string(),
-            pair: Some(KvPair {
-                key: "hello".into(),
-                value: Some(Value {
-                    value: Some(value::Value::String("world".into())),
-                }),
-            }),
-        })),
-    };
-    stream.send(msg.encode_to_vec()).await?;
+    // 生成一个 HSET 命令
+    let cmd = CommandRequest::new_hset("table1", "hello", "world".into());
 
-    // let msg = Request::new_get("hello");
-    // stream.send(msg.into()).await?;
+    // 发送 HSET 命令
+    client.send(cmd.encode_to_vec()).await?;
+    if let Some(Ok(data)) = client.next().await {
+        let data: CommandResponse = CommandResponse::decode(&data[..]).unwrap();
+        info!("Got response {:?}", data);
 
-    // while let Some(Result::Ok(buf)) = stream.next().await {
-    //     let msg: Response = Response::try_from(buf)?;
-    //     info!("Response: {:?}", msg);
-    // }
+        client.send(cmd.encode_to_vec()).await?;
+        if let Some(Ok(data)) = client.next().await {
+            let data: CommandResponse = CommandResponse::decode(&data[..]).unwrap();
+            info!("Got response {:?}", data);
+        }
+    }
 
     Ok(())
 }
