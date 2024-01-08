@@ -88,6 +88,17 @@ impl From<Value> for CommandResponse {
     }
 }
 
+/// 从 Vec<Value> 转换成 CommandResponse
+impl From<Vec<Value>> for CommandResponse {
+    fn from(v: Vec<Value>) -> Self {
+        Self {
+            status: StatusCode::OK.as_u16() as _,
+            values: v,
+            ..Default::default()
+        }
+    }
+}
+
 /// 从 Vec<KvPair> 转换成 CommandResponse
 impl From<Vec<KvPair>> for CommandResponse {
     fn from(v: Vec<KvPair>) -> Self {
