@@ -11,4 +11,8 @@ pub struct Args {
     /// 目标文件
     // #[arg(short, long)]
     pub files: Option<Vec<String>>,
+
+    /// 是否显示没有匹配的文件
+    #[arg(short, long, default_value_t = false)]
+    pub nothing: bool,
 }

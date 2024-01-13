@@ -23,7 +23,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let length = handlers.len();
     for handler in handlers {
         if let Ok((source, contents)) = handler.join() {
-            show(length, source, contents);
+            if args.nothing {
+                show(length, source, contents);
+            } else if !contents.is_empty() {
+                show(length, source, contents);
+            }
         }
     }
 
