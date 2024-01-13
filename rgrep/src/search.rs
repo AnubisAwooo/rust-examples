@@ -20,7 +20,7 @@ pub fn search(source: Source, word: String) -> (String, Vec<String>) {
                                 let start = m.start();
                                 let end = m.end();
                                 return Some(format!(
-                                    "{row}:{start} {}{}{}",
+                                    "{row: >6}:{start: <3} {}{}{}",
                                     line.split_at(start).0,
                                     line.split_at(start).1.split_at(end - start).0.red(),
                                     line.split_at(end).1

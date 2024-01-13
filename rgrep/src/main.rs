@@ -37,7 +37,7 @@ fn show(len: usize, source: String, contents: Vec<String>) {
             source.bold().blue(),
             contents.len().to_string().blue()
         );
-        contents.iter().for_each(|s| println!("    {}", s));
+        contents.iter().for_each(|s| println!("  {}", s));
     } else {
         println!("found: {}", contents.len().to_string().blue());
         contents.iter().for_each(|s| println!("{}", s));
