@@ -24,8 +24,12 @@ fn grep_file(re: &Regex, file: &str) -> Result<(), Box<dyn std::error::Error>> {
     let mut row = 1;
     while let Some(line) = lines.next() {
         let line = line?;
-        if let Some(_) = re.captures(&line) {
-            println!("{}: {}", row, line);
+        if let Some(cap) = re.captures(&line) {
+            let mut iter = cap.iter();
+            while let Some(Some(m)) = iter.next() {
+                let position = m.start();
+                println!("    {row}:{position} {}", line);
+            }
         }
         row += 1;
     }
@@ -37,6 +41,7 @@ where
     P: AsRef<std::path::Path>,
 {
     use std::io::BufRead;
+    println!("{}", filename.as_ref().to_str().unwrap());
     let file = std::fs::File::open(filename)?;
     Ok(std::io::BufReader::new(file).lines())
 }
