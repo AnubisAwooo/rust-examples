@@ -1,4 +1,5 @@
 use clap::Parser;
+use colored::*;
 use regex::Regex;
 use rgrep::args::Args;
 
@@ -27,8 +28,14 @@ fn grep_file(re: &Regex, file: &str) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(cap) = re.captures(&line) {
             let mut iter = cap.iter();
             while let Some(Some(m)) = iter.next() {
-                let position = m.start();
-                println!("    {row}:{position} {}", line);
+                let start = m.start();
+                let end = m.end();
+                println!(
+                    "    {row}:{start} {}{}{}",
+                    line.split_at(start).0,
+                    line.split_at(start).1.split_at(end - start).0.red(),
+                    line.split_at(end).1
+                );
             }
         }
         row += 1;
