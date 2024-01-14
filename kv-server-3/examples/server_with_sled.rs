@@ -17,8 +17,14 @@ async fn main() -> Result<()> {
     // let service: Service = ServiceInner::new(MemTable::new()).into();
     let service: Service<SledDb> = ServiceInner::new(SledDb::new("./tmp/kv_server"))
         .fn_before_send(|res| match res.message.as_ref() {
-            "" => res.message = "altered. Original message is empty.".into(),
-            s => res.message = format!("altered: {}", s),
+            "" => {
+                res.message = "altered. Original message is empty.".into();
+                None
+            }
+            s => {
+                res.message = format!("altered: {}", s);
+                None
+            }
         })
         .into();
 

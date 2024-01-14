@@ -35,9 +35,9 @@ impl<Store: Storage> Service<Store> {
 /// Service 内部数据结构
 pub struct ServiceInner<Store> {
     store: Store,
-    on_received: Vec<fn(&CommandRequest)>,
-    on_executed: Vec<fn(&CommandResponse)>,
-    on_before_send: Vec<fn(&mut CommandResponse)>,
+    on_received: Vec<fn(&CommandRequest) -> Option<CommandResponse>>,
+    on_executed: Vec<fn(&CommandResponse) -> Option<CommandResponse>>,
+    on_before_send: Vec<fn(&mut CommandResponse) -> Option<CommandResponse>>,
     on_after_send: Vec<fn()>,
 }
 
@@ -52,17 +52,20 @@ impl<Store: Storage> ServiceInner<Store> {
         }
     }
 
-    pub fn fn_received(mut self, f: fn(&CommandRequest)) -> Self {
+    pub fn fn_received(mut self, f: fn(&CommandRequest) -> Option<CommandResponse>) -> Self {
         self.on_received.push(f);
         self
     }
 
-    pub fn fn_executed(mut self, f: fn(&CommandResponse)) -> Self {
+    pub fn fn_executed(mut self, f: fn(&CommandResponse) -> Option<CommandResponse>) -> Self {
         self.on_executed.push(f);
         self
     }
 
-    pub fn fn_before_send(mut self, f: fn(&mut CommandResponse)) -> Self {
+    pub fn fn_before_send(
+        mut self,
+        f: fn(&mut CommandResponse) -> Option<CommandResponse>,
+    ) -> Self {
         self.on_before_send.push(f);
         self
     }
@@ -94,11 +97,17 @@ impl<Store: Storage> Service<Store> {
 
     pub fn execute(&self, cmd: CommandRequest) -> CommandResponse {
         debug!("Got request: {:?}", cmd);
-        self.inner.on_received.notify(&cmd);
+        if let Some(res) = self.inner.on_received.notify(&cmd) {
+            return res;
+        }
         let mut res = dispatch(cmd, &self.inner.store);
         debug!("Executed response: {:?}", res);
-        self.inner.on_executed.notify(&res);
-        self.inner.on_before_send.notify(&mut res);
+        if let Some(res) = self.inner.on_executed.notify(&res) {
+            return res;
+        }
+        if let Some(res) = self.inner.on_before_send.notify(&mut res) {
+            return res;
+        }
         if !self.inner.on_before_send.is_empty() {
             debug!("Modified response: {:?}", res);
         }
@@ -119,29 +128,35 @@ pub fn dispatch(cmd: CommandRequest, store: &impl Storage) -> CommandResponse {
 
 /// 事件通知（不可变事件）
 pub trait Notify<Arg> {
-    fn notify(&self, arg: &Arg);
+    fn notify(&self, arg: &Arg) -> Option<CommandResponse>;
 }
 
 /// 事件通知（可变事件）
 pub trait NotifyMut<Arg> {
-    fn notify(&self, arg: &mut Arg);
+    fn notify(&self, arg: &mut Arg) -> Option<CommandResponse>;
 }
 
-impl<Arg> Notify<Arg> for Vec<fn(&Arg)> {
+impl<Arg> Notify<Arg> for Vec<fn(&Arg) -> Option<CommandResponse>> {
     #[inline]
-    fn notify(&self, arg: &Arg) {
+    fn notify(&self, arg: &Arg) -> Option<CommandResponse> {
         for f in self {
-            f(arg)
+            if let Some(res) = f(arg) {
+                return Some(res);
+            }
         }
+        None
     }
 }
 
-impl<Arg> NotifyMut<Arg> for Vec<fn(&mut Arg)> {
+impl<Arg> NotifyMut<Arg> for Vec<fn(&mut Arg) -> Option<CommandResponse>> {
     #[inline]
-    fn notify(&self, arg: &mut Arg) {
+    fn notify(&self, arg: &mut Arg) -> Option<CommandResponse> {
         for f in self {
-            f(arg)
+            if let Some(res) = f(arg) {
+                return Some(res);
+            }
         }
+        None
     }
 }
 
@@ -196,21 +211,24 @@ pub fn assert_res_error(res: CommandResponse, code: u32, msg: &str) {
 #[test]
 fn event_registration_should_work() {
     use http::StatusCode;
-    fn b(cmd: &CommandRequest) {
+    fn b(cmd: &CommandRequest) -> Option<CommandResponse> {
         tracing::info!("Got {:?}", cmd);
+        None
     }
-    fn c(res: &CommandResponse) {
+    fn c(res: &CommandResponse) -> Option<CommandResponse> {
         tracing::info!("{:?}", res);
+        None
     }
-    fn d(res: &mut CommandResponse) {
+    fn d(res: &mut CommandResponse) -> Option<CommandResponse> {
         res.status = StatusCode::CREATED.as_u16() as _;
+        None
     }
     fn e() {
         tracing::info!("Data is sent");
     }
 
     let service: Service = ServiceInner::new(MemTable::default())
-        .fn_received(|_: &CommandRequest| {})
+        .fn_received(|_: &CommandRequest| None)
         .fn_received(b)
         .fn_executed(c)
         .fn_before_send(d)
