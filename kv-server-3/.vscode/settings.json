@@ -17,6 +17,8 @@
         "proto",
         "protobuf",
         "protos",
+        "tempdir",
+        "tempfile",
         "thiserror"
     ]
 }

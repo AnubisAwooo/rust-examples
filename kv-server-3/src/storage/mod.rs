@@ -3,6 +3,9 @@ use crate::{KvError, KvPair, Value};
 mod memory;
 pub use memory::MemTable;
 
+mod sled_db;
+pub use sled_db::SledDb;
+
 /// 提供 Storage iterator，这样 trait 的实现者只需要
 /// 把它们的 iterator 提供给 StorageIter，然后它们保证
 /// next() 传出的类型实现了 Into<KvPair> 即可
@@ -46,6 +49,8 @@ pub trait Storage {
 
 #[cfg(test)]
 mod tests {
+    use tempfile::tempdir;
+
     use super::*;
 
     #[test]
@@ -122,5 +127,26 @@ mod tests {
                 KvPair::new("k2", "v2".into())
             ]
         )
+    }
+
+    #[test]
+    fn sled_db_basic_interface_should_work() {
+        let dir = tempdir().unwrap();
+        let store = SledDb::new(dir);
+        test_basic_interface(store);
+    }
+
+    #[test]
+    fn sled_db_get_all_should_work() {
+        let dir = tempdir().unwrap();
+        let store = SledDb::new(dir);
+        test_get_all(store);
+    }
+
+    #[test]
+    fn sled_db_iter_should_work() {
+        let dir = tempdir().unwrap();
+        let store = SledDb::new(dir);
+        test_get_iter(store);
     }
 }
