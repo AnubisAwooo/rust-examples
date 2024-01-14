@@ -1,7 +1,7 @@
 use anyhow::Result;
 use async_prost::AsyncProstStream;
 use futures::prelude::*;
-use kv_server_3::{CommandRequest, MemTable, Service};
+use kv_server_3::{CommandRequest, MemTable, Service, ServiceInner};
 use prost::Message;
 use tokio::net::TcpListener;
 use tracing::info;
@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
     info!("Start listening on {}", addr);
 
     // main 函数开头，初始化 service
-    let service: Service = Service::new(MemTable::new());
+    let service: Service = ServiceInner::new(MemTable::new()).into();
     // while loop 中，使用 svc 来执行 cmd
     loop {
         let (stream, addr) = listener.accept().await?;
@@ -31,6 +31,8 @@ async fn main() -> Result<()> {
                 info!("Got a new command: {:?}", msg);
                 let res = svc.execute(msg);
                 stream.send(res.encode_to_vec()).await.unwrap();
+
+                svc.after_send();
             }
             info!("Client {:?} disconnected", addr);
         });
