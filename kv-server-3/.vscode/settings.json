@@ -17,6 +17,7 @@
         "proto",
         "protobuf",
         "protos",
+        "rocksdb",
         "tempdir",
         "tempfile",
         "thiserror"

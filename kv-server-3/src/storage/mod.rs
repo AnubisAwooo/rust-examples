@@ -6,6 +6,9 @@ pub use memory::MemTable;
 mod sled_db;
 pub use sled_db::SledDb;
 
+mod rocks_db;
+pub use rocks_db::RocksDb;
+
 /// 提供 Storage iterator，这样 trait 的实现者只需要
 /// 把它们的 iterator 提供给 StorageIter，然后它们保证
 /// next() 传出的类型实现了 Into<KvPair> 即可
