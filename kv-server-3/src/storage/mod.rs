@@ -3,6 +3,31 @@ use crate::{KvError, KvPair, Value};
 mod memory;
 pub use memory::MemTable;
 
+/// 提供 Storage iterator，这样 trait 的实现者只需要
+/// 把它们的 iterator 提供给 StorageIter，然后它们保证
+/// next() 传出的类型实现了 Into<KvPair> 即可
+pub struct StorageIter<T> {
+    data: T,
+}
+
+impl<T> StorageIter<T> {
+    pub fn new(data: T) -> Self {
+        Self { data }
+    }
+}
+
+impl<T> Iterator for StorageIter<T>
+where
+    T: Iterator,
+    T::Item: Into<KvPair>,
+{
+    type Item = KvPair;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.data.next().map(|v| v.into())
+    }
+}
+
 /// 对存储的抽象，我们不关心数据存在哪儿，但需要定义外界如何和存储打交道
 pub trait Storage {
     /// 从一个 HashTable 里获取一个 key 的 value
