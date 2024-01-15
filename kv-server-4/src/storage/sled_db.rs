@@ -29,27 +29,27 @@ fn flip<T, E>(x: Option<Result<T, E>>) -> Result<Option<T>, E> {
     x.map_or(Ok(None), |v| v.map(Some))
 }
 
-impl TryFrom<Value> for Vec<u8> {
-    type Error = KvError;
+// impl TryFrom<Value> for Vec<u8> {
+//     type Error = KvError;
 
-    fn try_from(value: Value) -> Result<Self, Self::Error> {
-        Ok(prost::Message::encode_to_vec(&value))
-    }
-}
+//     fn try_from(value: Value) -> Result<Self, Self::Error> {
+//         Ok(prost::Message::encode_to_vec(&value))
+//     }
+// }
 
-impl TryFrom<&[u8]> for Value {
-    type Error = KvError;
+// impl TryFrom<&[u8]> for Value {
+//     type Error = KvError;
 
-    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        Ok(prost::Message::decode(value)?)
-    }
-}
+//     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+//         Ok(prost::Message::decode(value)?)
+//     }
+// }
 
-impl From<sled::Error> for KvError {
-    fn from(value: sled::Error) -> Self {
-        KvError::Internal(value.to_string())
-    }
-}
+// impl From<sled::Error> for KvError {
+//     fn from(value: sled::Error) -> Self {
+//         KvError::Internal(value.to_string())
+//     }
+// }
 
 impl Storage for SledDb {
     fn get(&self, table: &str, key: &str) -> Result<Option<Value>, KvError> {

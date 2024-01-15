@@ -6,22 +6,24 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bytes = "1"        # 高效处理网络 buffer 的库
-prost = "0.12"     # 处理 protobuf 的代码
-tracing = "0.1"    # 日志处理
-thiserror = "1"    # 错误处理
+bytes = "1"                                    # 高效处理网络 buffer 的库
+prost = "0.12"                                 # 处理 protobuf 的代码
+tracing = "0.1"                                # 日志处理
+thiserror = "1"                                # 错误处理
 dashmap = "5"
 http = "1"
-sled = "0.34"      # sled db
+sled = "0.34"                                  # sled db
 rocksdb = "0.21.0"
+flate2 = "1"                                   # gzip 压缩
+tokio = { version = "1", features = ["full"] } # 异步网络库
 
 [dev-dependencies]
-tokio = { version = "1", features = ["full"] } # 异步网络库
-tracing-subscriber = "0.3"                     # 日志处理
-futures = "0.3"                                # 提供 Stream trait
-anyhow = "1"                                   # 错误处理
-async-prost = "0.4"                            # 支持把 protobuf 封装成 TCP frame
-tempfile = "3"                                 # 处理临时目录和临时文件
+tracing-subscriber = "0.3"                             # 日志处理
+futures = "0.3"                                        # 提供 Stream trait
+anyhow = "1"                                           # 错误处理
+async-prost = "0.4"                                    # 支持把 protobuf 封装成 TCP frame
+tokio-util = { version = "0.7", features = ["codec"] }
+tempfile = "3"                                         # 处理临时目录和临时文件
 
 [build-dependencies]
 prost-build = "0.12" # 编译 protobuf
