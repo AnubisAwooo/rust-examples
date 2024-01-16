@@ -1,3 +1,6 @@
+mod tls;
+pub use tls::*;
+
 mod frame;
 use bytes::BytesMut;
 pub use frame::{read_frame, FrameCoder};

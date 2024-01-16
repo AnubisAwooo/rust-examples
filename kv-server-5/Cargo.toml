@@ -16,6 +16,8 @@ sled = "0.34"                                  # sled db
 rocksdb = "0.21.0"
 flate2 = "1"                                   # gzip 压缩
 tokio = { version = "1", features = ["full"] } # 异步网络库
+tokio-rustls = "0.22"
+rustls-native-certs = "0.5"
 
 [dev-dependencies]
 tracing-subscriber = "0.3"                             # 日志处理
@@ -24,6 +26,7 @@ anyhow = "1"                                           # 错误处理
 async-prost = "0.4"                                    # 支持把 protobuf 封装成 TCP frame
 tokio-util = { version = "0.7", features = ["codec"] }
 tempfile = "3"                                         # 处理临时目录和临时文件
+certify = "0.3"
 
 [build-dependencies]
 prost-build = "0.12" # 编译 protobuf
