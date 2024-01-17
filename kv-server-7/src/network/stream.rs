@@ -54,7 +54,8 @@ where
 }
 
 /// 当调用 send() 时，会把 Out 发出去
-impl<S, In, Out> Sink<Out> for ProstStream<S, In, Out>
+// impl<S, In, Out> Sink<Out> for ProstStream<S, In, Out>
+impl<S, In, Out> Sink<&Out> for ProstStream<S, In, Out>
 where
     S: AsyncRead + AsyncWrite + Unpin,
     In: Unpin + Send,
@@ -67,7 +68,7 @@ where
         Poll::Ready(Ok(()))
     }
 
-    fn start_send(self: Pin<&mut Self>, item: Out) -> Result<(), Self::Error> {
+    fn start_send(self: Pin<&mut Self>, item: &Out) -> Result<(), Self::Error> {
         let this = self.get_mut();
         item.encode_frame(&mut this.wbuf)?;
 
@@ -141,7 +142,7 @@ mod tests {
         let cmd = CommandRequest::new_hdel("t1", "k1");
 
         // 使用 ProstStream 发送数据
-        stream.send(cmd.clone()).await?;
+        stream.send(&cmd.clone()).await?;
 
         // 使用 ProstStream 接收数据
         if let Some(Ok(s)) = stream.next().await {
