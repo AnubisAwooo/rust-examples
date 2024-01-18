@@ -16,3 +16,4 @@ quote = "1" # 用于生成代码的 TokenStream
 syn = { version = "2", features = [
     "extra-traits",
 ] } # 用于解析 TokenStream，使用 extra-traits 可以用于 Debug
+darling = "0.20"
