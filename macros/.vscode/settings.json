@@ -3,6 +3,7 @@
         "askama",
         "Deque",
         "endfor",
+        "optionized",
         "Punct",
         "struct"
     ]

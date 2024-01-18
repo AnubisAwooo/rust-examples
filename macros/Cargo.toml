@@ -11,3 +11,8 @@ proc-macro = true
 [dependencies]
 anyhow = "1"
 askama = "0.12" # 处理 jinjia 模板，模板需要放在和 src 平行的 templates 目录下
+proc-macro2 = "1" # proc-macro 的封装
+quote = "1" # 用于生成代码的 TokenStream
+syn = { version = "2", features = [
+    "extra-traits",
+] } # 用于解析 TokenStream，使用 extra-traits 可以用于 Debug

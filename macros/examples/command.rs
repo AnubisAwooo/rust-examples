@@ -1,4 +1,5 @@
-use macros::RawBuilder;
+use macros::Builder;
+// use macros::RawBuilder;
 
 // #[derive(Builder)]
 // pub struct Command {
@@ -9,7 +10,8 @@ use macros::RawBuilder;
 // }
 
 #[allow(dead_code)]
-#[derive(Debug, RawBuilder)]
+// #[derive(Debug, RawBuilder)]
+#[derive(Debug, Builder)]
 pub struct Command {
     executable: String,
     args: Vec<String>,
