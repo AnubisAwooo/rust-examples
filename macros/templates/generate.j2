@@ -1,0 +1,11 @@
+{% for extra in extra_types %}
+#[derive(Debug)]
+{{ extra }}
+{% endfor %}
+
+#[derive(Debug)]
+pub struct {{ name }} {
+    {% for field in fields %}
+        {{ field.name }}: {{ field.ty }},
+    {% endfor %}
+}
